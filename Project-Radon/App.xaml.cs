@@ -39,11 +39,22 @@ namespace Project_Radon
         /// </summary>
 
         public static new App Current => (App)Application.Current;
-        public CoreWindow? MainWindow => CoreWindow.GetForCurrentThread() ;   
+        public CoreWindow? MainWindow => CoreWindow.GetForCurrentThread() ;
+        public IServiceProvider Services { get; set; }
+
+        public static T GetService<T>() where T : class
+        {
+            return App.Current is null || App.Current.Services is null
+                ? throw new NullReferenceException("Application or Services are not properly initialized.")
+                : App.Current.Services.GetService(typeof(T)) is not T service
+                ? throw new ArgumentException($"{typeof(T)} needs to be registered in ConfigureServices within App.xaml.cs.")
+                : service;
+        }
         public App()
         {
             InitializeComponent();
             Suspending += OnSuspending;
+            
             Ioc.Default.ConfigureServices(ConfigureServices());
 
             object value = ApplicationData.Current.LocalSettings.Values["themeSetting"];

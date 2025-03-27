@@ -1365,8 +1365,10 @@
                     </Grid.RowDefinitions>
                     <StackPanel Orientation="Horizontal" />
                     <winui:WebView2
+                        x:Name="MainWebView2"
                         Grid.Row="1"
                         Margin="10"
+                        x:FieldModifier="Public"
                         BorderBrush="{ThemeResource SystemBaseLowColor}"
                         BorderThickness="1"
                         Source="https://google.com" />

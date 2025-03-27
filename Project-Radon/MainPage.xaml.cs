@@ -34,6 +34,9 @@ using System.Reflection;
 using Windows.ApplicationModel.Contacts;
 using Microsoft.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
+using Project_Radon.Services;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using Project_Radon.Contracts.Services;
 
 namespace Project_Radon
 {
@@ -43,9 +46,14 @@ namespace Project_Radon
         string GoogleSignInUserAgent;
         public static string SearchValue;
         private readonly ObservableCollection<BrowserTabViewItem> CurrentTabs = new ObservableCollection<BrowserTabViewItem>();
+        private readonly WebViewService viewService;
         public MainPage()
         {
             InitializeComponent();
+            viewService = App.GetService<WebViewService>();
+            viewService.Initialize(MainWebView2); 
+
+
             CurrentTabs.Add(new BrowserTabViewItem());
             CurrentTabs[0].Tab.PropertyChanged += SelectedTabPropertyChanged;
 

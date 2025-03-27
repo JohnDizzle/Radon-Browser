@@ -37,6 +37,7 @@ using Windows.UI.Xaml.Media;
 using Project_Radon.Services;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using Project_Radon.Contracts.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Project_Radon
 {
@@ -46,11 +47,13 @@ namespace Project_Radon
         string GoogleSignInUserAgent;
         public static string SearchValue;
         private readonly ObservableCollection<BrowserTabViewItem> CurrentTabs = new ObservableCollection<BrowserTabViewItem>();
-        private readonly WebViewService viewService;
+        private readonly IWebViewService viewService;
+
         public MainPage()
         {
             InitializeComponent();
-            viewService = App.GetService<WebViewService>();
+            viewService = App.Current.Services.GetService<IWebViewService>(); // App.Current.Services.GetService<IWebViewService>();
+
             viewService.Initialize(MainWebView2); 
 
 

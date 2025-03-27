@@ -11,6 +11,9 @@ using Project_Radon.Contracts.Services;
 using Newtonsoft.Json;
 using Project_Radon.Models;
 using Project_Radon.Helpers;
+using CommunityToolkit.Mvvm.ComponentModel;
+using Windows.UI.Xaml.Media.Imaging;
+
 
 namespace Project_Radon.Services
 {
@@ -24,13 +27,13 @@ namespace Project_Radon.Services
         string UserAgentWebCore { get; set; }
         ElementTheme ThemeDefault { get; set; }
         Visibility VisibilitySideToolBar { get; set; }
-
+        ObservableCollection<HistoryModel> HistoryModels { get; set; }
         string HomeUrlString { get; set; }
         bool TitleBarPinned { get; set; }
 
     }
 
-    public class WebDiveSettings : IWebDivSettings
+    public partial class WebDiveSettings : ObservableObject, IWebDivSettings 
     {
         private object settings;
 
@@ -52,6 +55,7 @@ namespace Project_Radon.Services
         public Visibility VisibilitySideToolBar { get; set; }
         public bool TitleBarPinned { get; set; }
         public string HomeUrlString { get; set; }
+        public ObservableCollection<HistoryModel> HistoryModels { get; set; }
 
     }
 
@@ -61,12 +65,12 @@ namespace Project_Radon.Services
         public WebDiveSettings AppSettings { get; set; }
         public event EventHandler<NotifyCollectionChangedEventArgs> FavoritesCollectionChanged;
         public event EventHandler<NotifyCollectionChangedEventArgs> HistoryCollectionChanged;
-        internal string CorePathFavorites { get; set; } = @"WebDiveCore\" + System.Security.Principal.WindowsIdentity.GetCurrent().Name! + @"\Favorites\";
-        internal string CorePathSettings { get; set; } = @"WebDiveCore\" + System.Security.Principal.WindowsIdentity.GetCurrent().Name! + @"\Settings\";
+        internal string CorePathFavorites { get; set; } = System.Security.Principal.WindowsIdentity.GetCurrent().Name! + @"\Favorites\";
+        internal string CorePathSettings { get; set; } =  System.Security.Principal.WindowsIdentity.GetCurrent().Name! + @"\Settings\";
         public SettingsService()
         {
             InitializeAsync();
-
+            
             var path = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER");
 
             if (File.Exists(Path.Combine(path, "Settings", "settings.json")))
@@ -98,6 +102,9 @@ namespace Project_Radon.Services
             {
                 AppSettings = settings;
             }
+            else {
+                AppSettings = new WebDiveSettings();
+            }
 
         }
 
@@ -122,7 +129,7 @@ namespace Project_Radon.Services
         {
             try
             {
-                StorageFolder storageFolder = KnownFolders.DocumentsLibrary;
+                StorageFolder storageFolder = ApplicationData.Current.LocalFolder; 
                 var file = await storageFolder.GetFileAsync(fileName);
                 return file != null;
             }
@@ -135,7 +142,7 @@ namespace Project_Radon.Services
         async Task<T> ReadFavorites<T>()
         {
             string json = "{}";
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), CorePathFavorites);
+            string path = Path.Combine(Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER"), CorePathFavorites);
             string fileFavs = Path.Combine(path, "favorites.json");
 
             try
@@ -151,10 +158,8 @@ namespace Project_Radon.Services
                 else
                 {
                     var dir = Directory.CreateDirectory(path);
-#pragma warning disable CS0642 // Possible mistaken empty statement
                     using (var fs = File.Create(fileFavs)) ;
-#pragma warning restore CS0642 // Possible mistaken empty statement
-                    return await Json.ToObjectAsync<T>(@"{ BookmarkName: 'https://google.com', BookmarkTitle: 'Your Home Page' , BookmarkIconUrl: 'https://googel.com/favicon.ico'  }");
+                    return await Json.ToObjectAsync<T>(json);
 
                 }
 
@@ -172,7 +177,7 @@ namespace Project_Radon.Services
         async Task<T> ReadSettings<T>()
         {
             string json = "{}";
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), CorePathSettings);
+            string path = Path.Combine(Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER"), CorePathSettings);
             string fileFavs = Path.Combine(path, "settings.json");
 
             try
@@ -188,9 +193,7 @@ namespace Project_Radon.Services
                 else
                 {
                     var dir = Directory.CreateDirectory(path);
-#pragma warning disable CS0642 // Possible mistaken empty statement
-                    using (var fs = File.Create(fileFavs)) ;
-#pragma warning restore CS0642 // Possible mistaken empty statement
+                    using (var fs = File.Create(fileFavs));
                     return await Json.ToObjectAsync<T>("{}");
 
                 }
@@ -213,17 +216,17 @@ namespace Project_Radon.Services
             try
             {
 
-                var Infile = await Windows.Storage.KnownFolders.DocumentsLibrary.GetFileAsync(string.Format(@"{0}settings.json", CorePathSettings));
+                var Infile = await Windows.Storage.ApplicationData.Current.LocalFolder.GetFileAsync(string.Format(@"{0}settings.json", CorePathSettings));
                 if (Infile is not null)
                 {
-                    var folder = await Windows.Storage.KnownFolders.DocumentsLibrary.GetFolderAsync(CorePathSettings);
+                    var folder = await Windows.Storage.ApplicationData.Current.LocalFolder.GetFolderAsync(CorePathSettings);
                     Windows.Storage.StorageFile file = await folder.CreateFileAsync("settings.json", CreationCollisionOption.OpenIfExists);
                     await Windows.Storage.FileIO.WriteTextAsync(file, await Json.StringifyAsync(settings));
 
                 }
                 else
                 {
-                    var folder = await Windows.Storage.KnownFolders.DocumentsLibrary.CreateFolderAsync(CorePathSettings);
+                    var folder = await Windows.Storage.ApplicationData.Current.LocalFolder.CreateFolderAsync(CorePathSettings);
                     if (folder != null)
                     {
                         Windows.Storage.StorageFile file = await folder.CreateFileAsync("settings.json", CreationCollisionOption.OpenIfExists);
@@ -247,16 +250,16 @@ namespace Project_Radon.Services
             try
             {
 
-                var Infile = await Windows.Storage.KnownFolders.DocumentsLibrary.GetFileAsync(string.Format(@"{0}favorites.json", CorePathFavorites));
+                var Infile = await Windows.Storage.ApplicationData.Current.LocalFolder.GetFileAsync(string.Format(@"{0}favorites.json", CorePathFavorites));
                 if (Infile is not null)
                 {
-                    var folder = await Windows.Storage.KnownFolders.DocumentsLibrary.GetFolderAsync(CorePathFavorites);
+                    var folder = await Windows.Storage.ApplicationData.Current.LocalFolder.GetFolderAsync(CorePathFavorites);
                     Windows.Storage.StorageFile file = await folder.CreateFileAsync("favorites.json", CreationCollisionOption.OpenIfExists);
                     await Windows.Storage.FileIO.WriteTextAsync(file, await Json.StringifyAsync(bookmarks));
                 }
                 else
                 {
-                    var folder = await Windows.Storage.KnownFolders.DocumentsLibrary.CreateFolderAsync(CorePathFavorites);
+                    var folder = await Windows.Storage.ApplicationData.Current.LocalFolder.CreateFolderAsync(CorePathFavorites);
                     if (folder != null)
                     {
                         Windows.Storage.StorageFile file = await folder.CreateFileAsync("favorites.json", CreationCollisionOption.OpenIfExists);

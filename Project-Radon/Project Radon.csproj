@@ -133,6 +133,7 @@
     <Compile Include="Contracts\ISettingsService.cs" />
     <Compile Include="Contracts\IWebViewServices.cs" />
     <Compile Include="Helpers\MessageToUI.cs" />
+    <Compile Include="Helpers\UrlToImageSourceConverter.cs" />
     <Compile Include="Helpers\UrlValidater.cs" />
     <Compile Include="Models\Bookmarks.cs" />
     <Compile Include="Models\HistoryModel.cs" />

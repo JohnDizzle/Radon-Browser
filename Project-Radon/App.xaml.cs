@@ -54,8 +54,6 @@ namespace Project_Radon
         {
             InitializeComponent();
             Suspending += OnSuspending;
-            
-            Ioc.Default.ConfigureServices(ConfigureServices());
 
             object value = ApplicationData.Current.LocalSettings.Values["themeSetting"];
 
@@ -80,6 +78,9 @@ namespace Project_Radon
         /// <param name="e">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
+
+            Services = App.Current.ConfigureServices();
+
             Frame rootFrame = Window.Current.Content as Frame;
 
             // Do not repeat app initialization when the Window already has content,
@@ -307,7 +308,7 @@ namespace Project_Radon
             var services = new ServiceCollection();
             // Default Activation Handler
             _ = services.AddSingleton<ISettingsService, SettingsService>();
-            _ = services.AddTransient<IWebViewService, WebViewService>();
+            _ = services.AddSingleton<IWebViewService, WebViewService>();
             
             // Core Services
             _ = services.AddSingleton<WeakReferenceMessenger>();

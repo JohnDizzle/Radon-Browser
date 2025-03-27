@@ -20,8 +20,9 @@ using Microsoft.Toolkit.Uwp.Notifications;
 using Project_Radon.Settings;
 using Windows.UI.Xaml.Media.Animation;
 using System.Linq;
-using Microsoft.Web.WebView2.Core;
 using Microsoft.UI.Xaml.Controls;
+using Project_Radon.Contracts.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Project_Radon.Controls
 {
@@ -56,6 +57,8 @@ namespace Project_Radon.Controls
         public string Title => IsCoreInitialized && !IsLoading ? (WebBrowser.CoreWebView2.DocumentTitle ?? WebBrowser.Source.AbsoluteUri) : "Loading";
         public bool IsCoreInitialized { get; private set; }
 
+        private readonly IWebViewService viewService;
+        
         public BrowserTab()
         {
             InitializeComponent();
@@ -63,6 +66,9 @@ namespace Project_Radon.Controls
 
             var options = new CoreWebView2EnvironmentOptions();
             options.AdditionalBrowserArguments = "--edge-webview-optional-enable-uwp-regular-downloads";
+
+            viewService = App.Current.Services.GetService<IWebViewService>(); // App.Current.Services.GetService<IWebViewService>();
+            viewService.Initialize(WebBrowser);
 
 
             WebBrowser.Source = new Uri("edge://radon-ntp");

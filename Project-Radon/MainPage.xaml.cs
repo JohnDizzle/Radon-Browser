@@ -47,15 +47,12 @@ namespace Project_Radon
         string GoogleSignInUserAgent;
         public static string SearchValue;
         private readonly ObservableCollection<BrowserTabViewItem> CurrentTabs = new ObservableCollection<BrowserTabViewItem>();
-        private readonly IWebViewService viewService;
+        
 
         public MainPage()
         {
             InitializeComponent();
-            viewService = App.Current.Services.GetService<IWebViewService>(); // App.Current.Services.GetService<IWebViewService>();
-
-            viewService.Initialize(MainWebView2); 
-
+            
 
             CurrentTabs.Add(new BrowserTabViewItem());
             CurrentTabs[0].Tab.PropertyChanged += SelectedTabPropertyChanged;

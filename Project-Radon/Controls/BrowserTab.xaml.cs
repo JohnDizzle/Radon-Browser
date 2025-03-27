@@ -21,6 +21,7 @@ using Project_Radon.Settings;
 using Windows.UI.Xaml.Media.Animation;
 using System.Linq;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.UI.Xaml.Controls;
 
 namespace Project_Radon.Controls
 {
@@ -134,7 +135,7 @@ namespace Project_Radon.Controls
 
 
 
-        private void WebBrowser_NavigationCompleted(Microsoft.UI.Xaml.Controls.WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
+        private void WebBrowser_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
         {
             ntpSearchBar.Text = string.Empty;
             IsLoading = false;
@@ -164,7 +165,7 @@ namespace Project_Radon.Controls
         }
         public void Close() => WebBrowser.Close();
 
-        private async void WebBrowser_NavigationStarting(Microsoft.UI.Xaml.Controls.WebView2 sender, CoreWebView2NavigationStartingEventArgs args)
+        private async void WebBrowser_NavigationStarting(WebView2 sender, CoreWebView2NavigationStartingEventArgs args)
         {
             offlinePage.Visibility = Visibility.Collapsed;
             IsLoading = true;

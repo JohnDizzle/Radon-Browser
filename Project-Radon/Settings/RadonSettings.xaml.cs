@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls;
 using Yttrium;
-using muxc = Microsoft.UI.Xaml.Controls;
+using muxc = Windows.UI.Xaml.Controls;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -12,7 +12,7 @@ namespace Project_Radon.Settings
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class RadonSettings : Page
+    public sealed partial class RadonSettings : muxc.Page
     {
         public RadonSettings()
         {
@@ -20,7 +20,7 @@ namespace Project_Radon.Settings
             NavView.ItemInvoked += async (_, e) =>
             {
                 if (!e.IsSettingsInvoked)
-                    switch ((e.InvokedItemContainer as Microsoft.UI.Xaml.Controls.NavigationViewItem).Tag.ToString())
+                    switch ((e.InvokedItemContainer as NavigationViewItem).Tag.ToString())
                     {
                         case "personalize":
                             Settings_Frame.Navigate(typeof(RadonSettings_Personalize), null);
@@ -56,7 +56,7 @@ namespace Project_Radon.Settings
             Settings_Frame.Navigate(typeof(RadonSettings_General), null);
         }
 
-        private void NavView_SelectionChanged(muxc.NavigationView sender, muxc.NavigationViewSelectionChangedEventArgs args)
+        private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
             //if (NavView.Tag == "general")
             //{

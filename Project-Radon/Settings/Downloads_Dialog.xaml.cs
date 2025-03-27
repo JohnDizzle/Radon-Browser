@@ -2,6 +2,7 @@
 using Windows.UI.Xaml;
 using System.Threading.Tasks;
 using System;
+using Microsoft.UI.Xaml.Controls;
 
 // The Content Dialog item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -27,13 +28,13 @@ namespace Project_Radon.Settings
             Hide();
         }
 
-        private async void WebView2_NavigationCompleted(Microsoft.UI.Xaml.Controls.WebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs args)
+        private async void WebView2_NavigationCompleted(WebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs args)
         {
             await Task.Delay(1500);
             wv2.Opacity = 1;
         }
 
-        private void wv2_NavigationStarting(Microsoft.UI.Xaml.Controls.WebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationStartingEventArgs args)
+        private void wv2_NavigationStarting(WebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationStartingEventArgs args)
         {
             wv2.Opacity = 0;
         }

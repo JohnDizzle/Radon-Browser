@@ -10,6 +10,7 @@
     <RootNamespace>Project_Radon</RootNamespace>
     <AssemblyName>Project Radon</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
+    <LangVersion>9.0</LangVersion>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.22000.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
@@ -112,25 +113,36 @@
     <Compile Include="Controls\BrowserTabViewItem.xaml.cs">
       <DependentUpon>BrowserTabViewItem.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\SplitView.xaml.cs">
-      <DependentUpon>SplitView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Controls\SplitViewBrowser.xaml.cs">
-      <DependentUpon>SplitViewBrowser.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Controls\SplitViewRoot.xaml.cs">
-      <DependentUpon>SplitViewRoot.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Helpers\BrowserBackend.cs" />
+    <Compile Include="Helpers\CollectionHelper.cs" />
     <Compile Include="Helpers\ConfirmExitDialog.xaml.cs">
       <DependentUpon>ConfirmExitDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helpers\ErrorDialog.xaml.cs">
       <DependentUpon>ErrorDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\ErrorsToUI.cs" />
+    <Compile Include="Helpers\FrameExtensions.cs" />
+    <Compile Include="Helpers\Json.cs" />
     <Compile Include="Helpers\loginpage.xaml.cs">
       <DependentUpon>loginpage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Contracts\INavigationAware.cs" />
+    <Compile Include="Contracts\IPageService.cs" />
+    <Compile Include="Contracts\IRightPaneService.cs" />
+    <Compile Include="Contracts\ISettingsService.cs" />
+    <Compile Include="Contracts\IWebViewServices.cs" />
+    <Compile Include="Helpers\MessageToUI.cs" />
+    <Compile Include="Helpers\UrlValidater.cs" />
+    <Compile Include="Models\Bookmarks.cs" />
+    <Compile Include="Models\HistoryModel.cs" />
+    <Compile Include="Models\Interfaces\IHistoryModel.cs" />
+    <Compile Include="Models\Interfaces\IViewModelAndUrl.cs" />
+    <Compile Include="Models\Providers\SearchProviders.cs" />
+    <Compile Include="Models\ViewModelAndUrl.cs" />
+    <Compile Include="Services\Messages\Message_Settings_Actions.cs" />
+    <Compile Include="Services\RightPaneService.cs" />
+    <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Settings\AboutDialog.xaml.cs">
       <DependentUpon>AboutDialog.xaml</DependentUpon>
     </Compile>
@@ -185,6 +197,8 @@
     <Compile Include="Settings\UserProfileDialog.xaml.cs">
       <DependentUpon>UserProfileDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Services\WebViewService.cs" />
+    <Compile Include="ViewModels\HistoryViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -332,18 +346,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\SplitView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\SplitViewBrowser.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\SplitViewRoot.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Helpers\ConfirmExitDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -435,6 +437,9 @@
     <PackageReference Include="Fluent.Icons">
       <Version>1.1.110</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection">
+      <Version>9.0.3</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.14</Version>
     </PackageReference>
@@ -453,6 +458,12 @@
     <PackageReference Include="Microsoft.UI.Xaml">
       <Version>2.8.5</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.Web.WebView2">
+      <Version>1.0.3124.44</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig">
@@ -461,9 +472,7 @@
     <None Include="Project Radon_TemporaryKey.pfx" />
     <None Include="Screenshots\readme.md" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ViewModels\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\CubeKit.UI\CubeKit.UI.csproj">
       <Project>{73936751-6325-49ce-8a7b-7006d6135b19}</Project>

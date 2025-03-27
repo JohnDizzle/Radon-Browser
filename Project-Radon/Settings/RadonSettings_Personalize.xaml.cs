@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.UI.Xaml.Controls;
+using System;
 using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.UI.Xaml;
@@ -22,7 +23,7 @@ namespace Project_Radon.Settings
             InitializeComponent();
         }
 
-        private async void TeachingTip_ActionButtonClick(Microsoft.UI.Xaml.Controls.TeachingTip sender, object args)
+        private async void TeachingTip_ActionButtonClick(TeachingTip sender, object args)
         {
             // Attempt restart, with arguments.
             AppRestartFailureReason result =

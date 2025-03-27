@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml.Controls;
+using Windows.UI.Xaml.Controls;
 using Project_Radon.Controls;
 using Project_Radon.Helpers;
 using Project_Radon.Settings;
@@ -10,9 +10,8 @@ using System.Threading.Tasks;
 using Windows.System;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media;
 using Yttrium;
 using Windows.ApplicationModel.Core;
 using SymbolIconSource = Microsoft.UI.Xaml.Controls.SymbolIconSource;
@@ -33,8 +32,10 @@ using Windows.UI.Xaml.Hosting;
 using Windows.UI.WindowManagement;
 using System.Reflection;
 using Windows.ApplicationModel.Contacts;
+using Microsoft.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
 
-namespace Yttrium_browser
+namespace Project_Radon
 {
     public sealed partial class MainPage : Page
     {

@@ -13,10 +13,20 @@ using Project_Radon.Settings;
 using Windows.Storage;
 using Microsoft.Toolkit.Uwp.Notifications;
 using Windows.Foundation.Collections;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
+using Windows.UI.Core;
+using Project_Radon.Contracts.Services;
+using Project_Radon.Services;
+using Newtonsoft.Json;
+using System.IO;
+using System.Reflection;
+using System.Threading.Tasks;
 
 // TODO: Import Cubekit.UI (Firecube's GlowUI refer https://github.com/FireCubeStudios/TemplateApp)
 
-namespace Yttrium_browser
+namespace Project_Radon
 {
     /// <summary>
     /// Provides application-specific behavior to supplement the default Application class.
@@ -27,10 +37,14 @@ namespace Yttrium_browser
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
+
+        public static new App Current => (App)Application.Current;
+        public CoreWindow? MainWindow => CoreWindow.GetForCurrentThread() ;   
         public App()
         {
             InitializeComponent();
             Suspending += OnSuspending;
+            Ioc.Default.ConfigureServices(ConfigureServices());
 
             object value = ApplicationData.Current.LocalSettings.Values["themeSetting"];
 
@@ -39,6 +53,12 @@ namespace Yttrium_browser
                 // Apply theme choice.
                 App.Current.RequestedTheme = (ApplicationTheme)(int)value;
             }
+
+            var pathToUDF = ApplicationData.Current.LocalFolder.Path;
+            
+            Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", pathToUDF + @"\RadonBrowser\");
+
+            SetupCoreFolders().ConfigureAwait(false);   
 
         }
 
@@ -170,6 +190,120 @@ namespace Yttrium_browser
                 // TODO: Show the corresponding content
                 
             }
+        }
+
+        static int tryCount = 0;
+        private Task SetupCoreFolders()
+        {
+
+
+            if (tryCount > 2)
+                return Task.FromException(new Exception("Radon Browser core folders can't be create in you documents"));
+
+            tryCount++;
+
+            var path = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER");
+            if (path != null)
+            {
+                if (Directory.Exists(path))
+                {
+
+                    if (!Directory.Exists(Path.Combine(path, "Favorites")))
+                    {
+                        _ = Directory.CreateDirectory(Path.Combine(path, "Favorites"));
+
+                        if (!File.Exists(Path.Combine(path, "Favorites\\favorites.json")))
+                            using (var fs = File.Create(Path.Combine(path, "Favorites\\favorites.json"))) ;
+
+                    }
+
+                    if (!Directory.Exists(Path.Combine(path, "Settings")))
+                    {
+                        _ = Directory.CreateDirectory(Path.Combine(path, "Settings"));
+
+                        if (!File.Exists(Path.Combine(path, "Settings\\settings.json")))
+                        {
+
+                            var AppSettings = new WebDiveSettings() { DefaultSearchProvider = 0, HomeUrl = new Uri("https://google.com"), IsLocationOnOff = false, SideKick = false };
+
+                            if (File.Exists(Path.Combine(path, "Settings", "settings.json")))
+                            {
+                                FileInfo fileInfo = new FileInfo(Path.Combine(path, "settings", "settings.json"));
+                                if (fileInfo.Length <= 0)
+                                {
+
+                                    File.WriteAllText(Path.Combine(path, "settings", "settings.json"), JsonConvert.SerializeObject(AppSettings));
+                                }
+                            }
+                            else
+                            {
+                                using (var file = File.Create(Path.Combine(path, "Settings", "settings.json")))
+                                {
+
+                                    byte[] data = new System.Text.UTF8Encoding(true).GetBytes(JsonConvert.SerializeObject(AppSettings));
+                                    file.Write(data, 0, data.Length);
+
+                                }
+
+                            }
+
+
+                        }
+                    }
+
+                    if (!Directory.Exists(Path.Combine(path, "WebView")))
+                    {
+
+                        _ = Directory.CreateDirectory(Path.Combine(path, "WebView"));
+
+                        if (!File.Exists(Path.Combine(path, "WebView\\view.png")))
+                            using (var fs = File.Create(Path.Combine(path, "WebView\\view.png"))) ;
+
+                    }
+
+                }
+                else
+                {
+                    _ = Directory.CreateDirectory(path);
+                    SetupCoreFolders().ConfigureAwait(false);
+                }
+
+            }
+            return Task.CompletedTask;
+        }
+        public static string Get_Appx_AssemblyDirectory(Assembly assembly)
+        {
+            string assemblyLocation = assembly.Location;
+            string directoryPath = Path.GetDirectoryName(assemblyLocation);
+
+            return directoryPath ?? throw new DirectoryNotFoundException("Publish directory not found");
+
+        }
+        public static string GetFullPathToExe()
+        {
+            string path = AppDomain.CurrentDomain.BaseDirectory;
+            int pos = path.LastIndexOf("\\");
+            return path.Substring(0, pos);
+        }
+
+        public static string GetFullPathToAsset(string assetName)
+        {
+            return GetFullPathToExe() + "\\Assets\\" + assetName;
+        }
+        private System.IServiceProvider ConfigureServices()
+        {
+            // TODO WTS: Register your services, viewmodels and pages here
+            var services = new ServiceCollection();
+            // Default Activation Handler
+            _ = services.AddSingleton<ISettingsService, SettingsService>();
+            _ = services.AddTransient<IWebViewService, WebViewService>();
+            
+            // Core Services
+            _ = services.AddSingleton<WeakReferenceMessenger>();
+            _ = services.AddSingleton<IMessenger, WeakReferenceMessenger>(provider =>
+                provider.GetRequiredService<WeakReferenceMessenger>());
+            
+            return services.BuildServiceProvider();
         }
     }
 }

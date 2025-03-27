@@ -1,9 +1,9 @@
-﻿using Microsoft.UI.Xaml.Controls;
-using System;
+﻿using System;
 using System.ComponentModel;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media.Imaging;
 using IconSource = Microsoft.UI.Xaml.Controls.IconSource;
+using Microsoft.UI.Xaml.Controls;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -71,7 +71,11 @@ namespace Project_Radon.Controls
         private void Tab_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             VisualStateManager.GoToState(this, Tab.IsLoading ? "Loading" : "NotLoading", false);
-            IconSource = CustomIcon ?? new ImageIconSource() { ImageSource = new BitmapImage(new Uri(Tab.Favicon)) };
+            if (CustomIcon is null)
+                IconSource = new ImageIconSource() { ImageSource = new BitmapImage(new Uri(Tab.Favicon)) };
+            else
+                IconSource = CustomIcon;
+
             PropertyChanged -= Tab_PropertyChanged;
             InvokePropertyChanged();
             PropertyChanged += Tab_PropertyChanged;

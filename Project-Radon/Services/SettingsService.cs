@@ -13,6 +13,9 @@ using Project_Radon.Models;
 using Project_Radon.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Windows.UI.Xaml.Media.Imaging;
+using System.Threading;
+using System.Reflection.Metadata.Ecma335;
+using System.Collections.Generic;
 
 
 
@@ -61,13 +64,15 @@ namespace Project_Radon.Services
 
     class SettingsService : ISettingsService
     {
+        private static readonly SemaphoreSlim __Locker_acids_events = new SemaphoreSlim(1, 1);
+
         public static SettingsService Instance { get; set; }
         public WebDiveSettings AppSettings { get; set; }
         public event EventHandler<NotifyCollectionChangedEventArgs> FavoritesCollectionChanged;
         public event EventHandler<NotifyCollectionChangedEventArgs> HistoryCollectionChanged;
-        internal string CorePathFavorites { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"\Favorites\";
-        internal string CorePathSettings { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"\Settings\";
-        internal string CorePathHistory { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"\History\";
+        internal string CorePathFavorites { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"Favorites\";
+        internal string CorePathSettings { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"Settings\";
+        internal string CorePathHistory { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"History\";
 
         public SettingsService()
         {
@@ -87,9 +92,10 @@ namespace Project_Radon.Services
             else
             {
 
-                 using (var fs = File.Create(Path.Combine(path, "Settings", "settings.json"))) ;
+                using (var fs = File.Create(Path.Combine(path, "Settings", "settings.json"))) { } ;
 
             }
+            // load from file. 
             
             Instance = this;
             FavoritesStore.CollectionChanged += FavoritesStore_CollectionChanged;
@@ -107,18 +113,30 @@ namespace Project_Radon.Services
             else {
                 AppSettings = new WebDiveSettings();
             }
-
+             
+            historyModels =  await ReadHistory<ObservableCollection<HistoryModel>>();
         }
 
         private void HistoryStore_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+            
+            __Locker_acids_events.WaitAsync();
+            
             // this is bubbling up to historyviewmodel and mainpageviewmodel for myhistory collection. need to add to other pages sortly 
             HistoryCollectionChanged?.Invoke(this, e);
+
+            __Locker_acids_events.Release();    
+
+
         }
 
         private void FavoritesStore_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+            __Locker_acids_events.WaitAsync();
+
             FavoritesCollectionChanged?.Invoke(this, e);
+
+            __Locker_acids_events.Release();
         }
 
         public void Remove(string key)
@@ -173,11 +191,128 @@ namespace Project_Radon.Services
             }
         }
 
+        async Task<T> ReadSettings<T>()
+        {
+            string json = "{}";
+            string path = Path.Combine(Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER"), CorePathSettings);
+            string fileFavs = Path.Combine(path, "settings.json");
+
+            try
+            {
+
+                if (File.Exists(fileFavs))
+                {
+                    json = File.ReadAllText(fileFavs);
+                    var settings = JsonConvert.DeserializeObject<T>(json);
+                    return await Task.FromResult<T>(settings);
+
+                }
+                else
+                {
+                    var dir = Directory.CreateDirectory(path);
+                    using (var fs = File.Create(fileFavs)) ;
+                    return await Task.FromResult(JsonConvert.DeserializeObject<T>("{}"));
+
+                }
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+        }
+        async Task<T> ReadHistory<T>()
+        {
+            string json = "[]";
+            string path = Path.Combine(Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER"), CorePathHistory);
+            string fileHistory = Path.Combine(path, "history.json");
+
+            try
+            {
+                if (File.Exists(fileHistory))
+                {
+                    json = File.ReadAllText(fileHistory);
+                    var history = JsonConvert.DeserializeObject<List<HistoryModel>>(json);
+
+                    if (history is null)
+                    {
+                        return await Task.FromResult(JsonConvert.DeserializeObject<T>("[]"));
+                    }   
+
+                    // Load BitmapImage for each HistoryModel
+
+                    foreach (var item in history.ToList())
+                    {
+                        var bitmap = new BitmapImage(new Uri($"https://www.google.com/s2/favicons?domain_url={item.TheUrl.AbsoluteUri}"));
+                        item.TheContents = bitmap ?? new BitmapImage(new("ms-appx://Assets/StoreLogo.png"));
+
+                    }
+                    return await Task.FromResult(JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(history)));
+                }
+                else
+                {
+                    var dir = Directory.CreateDirectory(path);
+                    using (var fs = File.Create(fileHistory)) ;
+                    return await Task.FromResult(JsonConvert.DeserializeObject<T>("[]"));
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        async void WriteHistory<T>(T history)
+        {
+            try
+            {
+                var file = CorePathHistory + "history.json";
+
+                if (File.Exists(file))
+                {
+                    var existingHistory = JsonConvert.DeserializeObject<List<HistoryModel>>(File.ReadAllText(file));
+
+                    if (existingHistory is null)
+                        return; 
+
+                    foreach (var item in (history as List<HistoryModel>).ToList())
+                    {
+                        if (!existingHistory.Any(h => h.TheUrl == item.TheUrl))
+                        {
+                            existingHistory.Add(item);
+                        }
+                    }
+
+                    var json = JsonConvert.SerializeObject(existingHistory);
+                    await File.WriteAllTextAsync(file, json);
+                }
+                else
+                {
+                    Directory.CreateDirectory(CorePathSettings);
+
+                    if (Directory.Exists(CorePathSettings))
+                    {
+                        using (var fs = File.Create(file)) { }
+                        var json = JsonConvert.SerializeObject(history);
+                        await File.WriteAllTextAsync(file, json);
+                    }
+                }
+                return;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
         private async void WriteFavorite<T>(T favorites)
         {
             try
             {
-                var file = Path.Combine(CorePathSettings, "favorites.json");
+                var file = CorePathFavorites + "favorites.json";
 
                 if (File.Exists(file))
                 {
@@ -202,40 +337,7 @@ namespace Project_Radon.Services
                 throw;
             }
         }
-        async Task<T> ReadSettings<T>()
-        {
-            string json = "{}";
-            string path = Path.Combine(Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER"), CorePathSettings);
-            string fileFavs = Path.Combine(path, "settings.json");
-
-            try
-            {
-
-                if (File.Exists(fileFavs))
-                {
-                    json = File.ReadAllText(fileFavs);
-                    var settings = JsonConvert.DeserializeObject<T>(json);
-                    return await Task.FromResult<T>(settings);
-
-                }
-                else
-                {
-                    var dir = Directory.CreateDirectory(path);
-                    using (var fs = File.Create(fileFavs));
-                    return await Task.FromResult(JsonConvert.DeserializeObject<T>("{}"));
-
-                }
-
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-
-
-        }
+        
 
         async Task WriteSettings<T>(T settings)
         {
@@ -243,7 +345,7 @@ namespace Project_Radon.Services
 
             try
             {
-                var file = Path.Combine(CorePathSettings, "settings.json");
+                var file = CorePathSettings + "settings.json";
 
                 if (File.Exists(file))
                 {
@@ -276,12 +378,15 @@ namespace Project_Radon.Services
         {
             get
             {
-                var result = ReadHistory<ObservableCollection<HistoryModel>>().GetAwaiter().GetResult();
-                return result ?? new ObservableCollection<HistoryModel>();
+                return historyModels;   
+
+                //var result = ReadHistory<ObservableCollection<HistoryModel>>().GetAwaiter().GetResult();
+                //return result ?? new ObservableCollection<HistoryModel>();
             }
             set
             {
                 var obj = new object();
+
                 lock (obj)
                 {
                     historyModels.Add((value as ObservableCollection<HistoryModel>).FirstOrDefault());
@@ -291,62 +396,7 @@ namespace Project_Radon.Services
             }
         }
 
-        async Task<T> ReadHistory<T>()
-        {
-            string json = "[]";
-            string path = Path.Combine(Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER"), CorePathHistory);
-            string fileHistory = Path.Combine(path, "history.json");
-
-            try
-            {
-                if (File.Exists(fileHistory))
-                {
-                    json = File.ReadAllText(fileHistory);
-                    var history = JsonConvert.DeserializeObject<T>(json);
-                    return await Task.FromResult<T>(history);
-                }
-                else
-                {
-                    var dir = Directory.CreateDirectory(path);
-                    using (var fs = File.Create(fileHistory)) ;
-                    return await Task.FromResult(JsonConvert.DeserializeObject<T>("[]"));
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-
-        async void WriteHistory<T>(T history)
-        {
-            try
-            {
-                var file = Path.Combine(CorePathSettings, "history.json");
-
-                if (File.Exists(file))
-                {
-                    var json = JsonConvert.SerializeObject(history);
-                    await File.WriteAllTextAsync(file, json);
-                }
-                else
-                {
-                    Directory.CreateDirectory(CorePathSettings);
-
-                    if (Directory.Exists(CorePathSettings))
-                    {
-                        using (var fs = File.Create(file)) { };
-                        var json = JsonConvert.SerializeObject(history);
-                        await File.WriteAllTextAsync(file, json);
-                    }
-                }
-                return;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
+        
 
         public string HomeUrlString
         {

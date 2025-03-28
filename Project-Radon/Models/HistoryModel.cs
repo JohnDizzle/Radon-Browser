@@ -11,6 +11,9 @@ using Windows.UI.Xaml;
 using Project_Radon.Models.Interfaces;
 using Project_Radon.ViewModels;
 using Newtonsoft.Json;
+using Windows.Storage.Streams;
+using System.Net.Http;
+using Microsoft.UI.Xaml.Controls;
 
 namespace Project_Radon.Models
 {
@@ -27,6 +30,10 @@ namespace Project_Radon.Models
 
         private Uri _TheUrl = default;
         public Uri TheUrl { get { return _TheUrl; } set { SetProperty(ref _TheUrl, value); } }
+
+        private string _FavIconUrl = default;
+        public string FavIconUrl { get { return _FavIconUrl; } set { SetProperty(ref _FavIconUrl, value); } }
+
 
         private BitmapImage _TheContents = default;
         [JsonIgnore]
@@ -85,7 +92,12 @@ namespace Project_Radon.Models
 
         public HistoryModel(string title, string _url)
         {
-            TheDocumentTitle = title; TheUrl = new Uri(_url); DateTime = DateTimeOffset.Now;
+
+            TheDocumentTitle = title; 
+            TheUrl = new Uri(_url); 
+            DateTime = DateTimeOffset.Now; 
+            FavIconUrl = $"https://www.google.com/s2/favicons?domain_url={_url}";
+
         }
 
         public bool Equals(HistoryModel other)

@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:media="using:Microsoft.Toolkit.Uwp.UI.Media"
+    xmlns:models="using:Project_Radon.Models"
     xmlns:toolkit="using:Microsoft.Toolkit.Uwp.UI.Controls"
     xmlns:ui="using:Microsoft.Toolkit.Uwp.UI"
     xmlns:winui="using:Microsoft.UI.Xaml.Controls"
@@ -1017,46 +1018,73 @@
                                                             HorizontalAlignment="Stretch"
                                                             HorizontalContentAlignment="Left"
                                                             Background="Transparent"
-                                                            BorderBrush="Transparent">
+                                                            BorderBrush="Transparent"
+                                                            Canvas.ZIndex="999">
                                                             <Button.Flyout>
-                                                                <Flyout Placement="Left" ShowMode="TransientWithDismissOnPointerMoveAway">
+                                                                <Flyout
+                                                                    AllowFocusOnInteraction="True"
+                                                                    FlyoutPresenterStyle="{StaticResource MicaFlyoutStyle}"
+                                                                    Placement="LeftEdgeAlignedTop"
+                                                                    ShowMode="TransientWithDismissOnPointerMoveAway">
                                                                     <Flyout.Content>
                                                                         <ListView
                                                                             x:Name="HistoryBack"
-                                                                            MaxWidth="400"
+                                                                            Width="400"
                                                                             Margin="2"
-                                                                            Background="DarkSlateBlue"
-                                                                            BorderBrush="LightYellow"
+                                                                            Background="{ThemeResource MicaDarkBrush}"
+                                                                            BorderBrush="{ThemeResource ListBoxBorderThemeBrush}"
                                                                             BorderThickness="1"
+                                                                            CornerRadius="5"
                                                                             ItemsSource="{x:Bind ViewModel.MyHistory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                                            <ListView.Transitions>
+                                                                                <TransitionCollection>
+                                                                                    <EntranceThemeTransition FromVerticalOffset="100" />
+                                                                                </TransitionCollection>
+                                                                            </ListView.Transitions>
                                                                             <ListView.Header>
-                                                                                <StackPanel Margin="1" HorizontalAlignment="Center">
+                                                                                <StackPanel
+                                                                                    Margin="1"
+                                                                                    Padding="2"
+                                                                                    HorizontalAlignment="Left"
+                                                                                    VerticalAlignment="Center"
+                                                                                    Orientation="Horizontal"
+                                                                                    Spacing="4">
+                                                                                    <Image
+                                                                                        Width="32"
+                                                                                        Height="32"
+                                                                                        Margin="2"
+                                                                                        Source="/Assets/StoreLogo.png"
+                                                                                        Stretch="Fill" />
+
                                                                                     <TextBlock
                                                                                         FontWeight="Bold"
                                                                                         Foreground="WhiteSmoke"
-                                                                                        Text="Click To Navigate" />
+                                                                                        Text="My History" />
                                                                                 </StackPanel>
                                                                             </ListView.Header>
                                                                             <ListView.ItemTemplate>
-                                                                                <DataTemplate>
+                                                                                <DataTemplate x:DataType="models:HistoryModel">
 
                                                                                     <StackPanel
                                                                                         x:Name="HistoryPanel"
-                                                                                        MinWidth="100"
+                                                                                        MinWidth="320"
+                                                                                        Margin="0,1.5,3,2"
                                                                                         Padding="2"
-                                                                                        BorderBrush="Ivory"
-                                                                                        BorderThickness="1"
                                                                                         Orientation="Horizontal"
                                                                                         Tapped="HistoryPanel_Tapped"
                                                                                         ToolTipService.ToolTip="{Binding TheDocumentTitle, Mode=OneWay}">
                                                                                         <Image
-                                                                                            Width="20"
-                                                                                            Height="20"
+                                                                                            Width="24"
+                                                                                            Height="24"
                                                                                             Margin="2"
-                                                                                            Source="{Binding TheContents, Mode=OneWay}" />
+                                                                                            HorizontalAlignment="Left"
+                                                                                            VerticalAlignment="Center"
+                                                                                            Source="{Binding FavIconUrl, Mode=OneWay}" />
                                                                                         <TextBlock
                                                                                             MinWidth="90"
                                                                                             MaxWidth="200"
+                                                                                            Padding="2"
+                                                                                            HorizontalAlignment="Right"
                                                                                             TextWrapping="WrapWholeWords">
                                                                                             <Run Text="{Binding TheDocumentTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                                                             <Run Text="-" />
@@ -1066,6 +1094,7 @@
 
                                                                                 </DataTemplate>
                                                                             </ListView.ItemTemplate>
+
                                                                         </ListView>
                                                                     </Flyout.Content>
                                                                 </Flyout>

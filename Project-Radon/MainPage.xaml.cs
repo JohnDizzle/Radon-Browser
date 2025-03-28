@@ -63,6 +63,10 @@ namespace Project_Radon
             CurrentTabs[0].Tab.PropertyChanged += SelectedTabPropertyChanged;
 
             Window.Current.CoreWindow.Activated += CoreWindow_Activated;
+            Window.Current.CoreWindow.Closed += (s,e)=> {
+                //save last instance of history from the last tab
+                ViewModel._SettingService.HistoryStore = ViewModel.MyHistory;
+            };
 
             // TitleBar customizations
 

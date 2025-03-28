@@ -103,13 +103,12 @@ namespace Project_Radon.Services
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    HistoryStore = SettingsService.HistoryStore;
+                    //HistoryStore = SettingsService.HistoryStore;
                     OnPropertyChanged(nameof(HistoryStore));
                     break;
                 case NotifyCollectionChangedAction.Move:
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    HistoryStore = SettingsService.HistoryStore;
                     OnPropertyChanged(nameof(HistoryStore));
                     break;
                 case NotifyCollectionChangedAction.Replace:
@@ -281,7 +280,7 @@ namespace Project_Radon.Services
                         BitmapImage favStream;
                         if (string.IsNullOrEmpty(json))
                         {
-                            favStream = await GetFavoriteBitmap($"https://www.google.com/s2/favicons?domain_url={_webView.Source.Host}");
+                            favStream = await GetFavoriteBitmap($"https://www.google.com/s2/favicons?domain_url={_webView.Source.AbsoluteUri}");
                         }
                         else
                         {
@@ -348,70 +347,24 @@ namespace Project_Radon.Services
 
         private async void CoreWebView2_HistoryChanged(CoreWebView2 sender, object args)
         {
-
-            // wait for loading of page.. 
+            
+            
             try
             {
                 if (_webView.Source is not null)
                     if (_webView.Source.OriginalString! == "about:blank" || _webView.Source.OriginalString.StartsWith("edge://"))
                         return;
-
-
-                await Task.Factory.StartNew(async () =>
-                {
-                    await Task.Delay(640);
-
-                    try
-                    {
-                        _webView.Dispatcher?.TryRunAsync( Windows.UI.Core.CoreDispatcherPriority.Normal, (async () =>
-                        {
-
-
-                            HistoryModel item = await GatherWebViewInfoAsync();
-                            AddressPicture = item.TheContents;
-                            AddressUrl = string.IsNullOrEmpty(_webView.CoreWebView2?.FaviconUri) ? new Uri(string.Format("https://www.google.com/s2/favicons?domain_url={0}", _webView.Source.Host.ToString())) : new Uri(_webView.CoreWebView2?.FaviconUri);
-
-                            if (HistoryStore.Any(t => t.TheUrl.ToString() == item.TheUrl.AbsoluteUri))
-                            {
-                                var exits = HistoryStore.Single(x => x.TheUrl.ToString() == item.TheUrl.AbsoluteUri);
-                                if (exits is HistoryModel)
-                                {
-                                    var index = HistoryStore.IndexOf(exits);
-                                    if (index >= 0)
-                                    {
-
-                                        HistoryStore.RemoveAt(index);
-                                        HistoryStore.Add(item);
-
-
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                HistoryStore.Add(item);
-                            }
-
-                            SettingsService.HistoryStore = HistoryStore;
-                            HistoryChanged?.Invoke(this, (object)_webView.Source);
-                        }));
+                    else {
+                        await SaveHistoryToLocalStorageAsync(new HistoryModel(_webView.CoreWebView2?.DocumentTitle, _webView.Source?.AbsoluteUri));
                     }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e.Message!);
-                    }
-
-                    return Task.CompletedTask;
-                }).ConfigureAwait(false);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e.Message!);
+                return;
             }
-
-
         }
 
+         
         private async void OnWebViewNavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
         {
             // wait for loading of page.. 
@@ -481,6 +434,23 @@ namespace Project_Radon.Services
                 Console.WriteLine(e.Message!);
             }
 
+        }
+        public async Task SaveHistoryToLocalStorageAsync(HistoryModel item)
+        {
+            try
+            {
+                string jsonItem = JsonConvert.SerializeObject(item);
+                string script = $@"
+                    (function() {{
+                        localStorage.setItem('radon_edge_history', '{jsonItem}');
+                    }})();
+                ";
+                await _webView.ExecuteScriptAsync(script);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving history to local storage: {ex.Message}");
+            }
         }
         private void OnWebViewProgressStartingAsync(WebView2 sender, CoreWebView2NavigationStartingEventArgs args)
         {
@@ -793,6 +763,7 @@ namespace Project_Radon.Services
         {
             return _webView.ExecuteScriptAsync(javascriptCode);
         }
+       
     }
 }
 

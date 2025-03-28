@@ -136,7 +136,7 @@ namespace Project_Radon.Services
 
                 await semaphoreSlim.WaitAsync();
 
-                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), CorePathWebView);
+                string path = Path.Combine(Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER"), CorePathWebView);
                 string fileFavs = Path.Combine(path, "view.png");
 
                 try
@@ -176,17 +176,26 @@ namespace Project_Radon.Services
 
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
-                    await _webView?.CoreWebView2?.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Jpeg, memoryStream.AsRandomAccessStream());
-                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    try
+                    {
+                        await _webView?.CoreWebView2?.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Jpeg, memoryStream.AsRandomAccessStream());
+                        memoryStream.Seek(0, SeekOrigin.Begin);
 
-                    bitmap.SetSource(memoryStream.AsRandomAccessStream());
+                        bitmap.SetSource(memoryStream.AsRandomAccessStream());
 
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    SaveViewToDisk(memoryStream.GetBuffer());
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+                        SaveViewToDisk(memoryStream.GetBuffer());
 
-                    memoryStream.Seek(0, SeekOrigin.Begin);
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+                    }
+                    catch (Exception e)
+                    {
+
+                        throw;
+                    }
+                    
                     return await Task.FromResult(bitmap);
-
+                    
                 }
 
             }
@@ -258,8 +267,7 @@ namespace Project_Radon.Services
                     // use the default from the api, 11-1-23 testing; 
                     BitmapImage image = new BitmapImage(new(_webView.CoreWebView2?.FaviconUri));
                     title = _webView.CoreWebView2?.DocumentTitle;
-                    BitmapImage view = await GetPictureOfViewAsync();
-                    return new HistoryModel(title, _webView.Source.AbsoluteUri, image, null, 0, view);
+                    return new HistoryModel(title, _webView.Source.AbsoluteUri);
 
                 }
                 catch (Exception)
@@ -281,46 +289,13 @@ namespace Project_Radon.Services
                         }
 
                         title = _webView.CoreWebView2?.DocumentTitle;
-                        BitmapImage view = await GetPictureOfViewAsync();
-                        return new HistoryModel(title, _webView.Source.AbsoluteUri, favStream, null, 0, view);
+                        //BitmapImage view = await GetPictureOfViewAsync();
+                        return new HistoryModel(title, _webView.Source.AbsoluteUri);
                     }
                     else
                     {
-                        return new HistoryModel(title, _webView.Source.AbsoluteUri, null, null, 0, null);
+                        return new HistoryModel(title, _webView.Source.AbsoluteUri);
                     }
-                    //}
-                    //// this is used if the return of the coreView2 doesn't work ; 
-                    //string favLocation = await GetFavIcon();
-                    //if (!string.IsNullOrEmpty(favLocation))
-                    //{
-                    //    var json = JsonConvert.DeserializeObject(favLocation)?.ToString();
-
-                    //    if (string.IsNullOrEmpty(json))
-                    //    {
-
-                    //        BitmapImage favStream = await GetFavoriteBitmap(string.Format("https://www.google.com/s2/favicons?domain_url={0}", _webView.Source.Host!));
-                    //        title = _webView.CoreWebView2?.DocumentTitle;
-                    //        BitmapImage view = await GetPictureOfViewAsync();
-                    //        return new HistoryModel(title, _webView.Source.AbsoluteUri, favStream, null, 0, view);
-
-                    //    }
-                    //    else {
-
-                    //        BitmapImage favStream = await GetFavoriteBitmap(json.ToString());
-                    //        title = _webView.CoreWebView2?.DocumentTitle;
-                    //        BitmapImage view = await GetPictureOfViewAsync();
-                    //        return new HistoryModel(title, _webView.Source.AbsoluteUri, favStream, null, 0, view);
-                    //    }
-
-                    //}
-                    //else
-                    //{
-                    //    return new HistoryModel(title, _webView.Source.AbsoluteUri, null, null, 0, null);
-
-                    //}
-
-
-
                 }
 
             }
@@ -378,7 +353,7 @@ namespace Project_Radon.Services
             try
             {
                 if (_webView.Source is not null)
-                    if (_webView.Source.OriginalString! == "about:blank")
+                    if (_webView.Source.OriginalString! == "about:blank" || _webView.Source.OriginalString.StartsWith("edge://"))
                         return;
 
 
@@ -443,14 +418,15 @@ namespace Project_Radon.Services
             try
             {
                 if (_webView.Source is not null)
-                    if (_webView.Source.OriginalString! == "about:blank")
+                    if (_webView.Source.OriginalString! == "about:blank" || _webView.Source.OriginalString.StartsWith("edge://"))
                         return;
 
-                //capture picture
+                // not used capture picture -
+                // make so not duplicates.  youtube iframes are not captured here - capture in the starting event. 
 
                 await Task.Factory.StartNew(async () =>
                 {
-                    await Task.Delay(640);
+                    //await Task.Delay(640); //capture picture of page.
                     try
                     {
                         _webView.Dispatcher?.TryRunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,

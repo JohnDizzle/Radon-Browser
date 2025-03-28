@@ -23,6 +23,7 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using Project_Radon.ViewModels;
 
 // TODO: Import Cubekit.UI (Firecube's GlowUI refer https://github.com/FireCubeStudios/TemplateApp)
 
@@ -215,6 +216,7 @@ namespace Project_Radon
             tryCount++;
 
             var path = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER");
+           
             if (path != null)
             {
                 if (Directory.Exists(path))
@@ -225,8 +227,19 @@ namespace Project_Radon
                         _ = Directory.CreateDirectory(Path.Combine(path, "Favorites"));
 
                         if (!File.Exists(Path.Combine(path, "Favorites\\favorites.json")))
-                            using (var fs = File.Create(Path.Combine(path, "Favorites\\favorites.json"))) ;
+                        {
+                            using (var fs = File.Create(Path.Combine(path, "Favorites\\favorites.json"))) { };
+                        }
+                    }
 
+                    if (!Directory.Exists(Path.Combine(path, "History")))
+                    {
+                        _ = Directory.CreateDirectory(Path.Combine(path, "History"));
+
+                        if (!File.Exists(Path.Combine(path, "History\\history.json")))
+                        {
+                            using (var fs = File.Create(Path.Combine(path, "History\\history.json"))) { };
+                        }
                     }
 
                     if (!Directory.Exists(Path.Combine(path, "Settings")))
@@ -269,7 +282,7 @@ namespace Project_Radon
                         _ = Directory.CreateDirectory(Path.Combine(path, "WebView"));
 
                         if (!File.Exists(Path.Combine(path, "WebView\\view.png")))
-                            using (var fs = File.Create(Path.Combine(path, "WebView\\view.png"))) ;
+                            using (var fs = File.Create(Path.Combine(path, "WebView\\view.png"))) { } ;
 
                     }
 
@@ -309,7 +322,7 @@ namespace Project_Radon
             // Default Activation Handler
             _ = services.AddSingleton<ISettingsService, SettingsService>();
             _ = services.AddSingleton<IWebViewService, WebViewService>();
-            
+            _ = services.AddTransient<MainPageViewModel>(); 
             // Core Services
             _ = services.AddSingleton<WeakReferenceMessenger>();
             _ = services.AddSingleton<IMessenger, WeakReferenceMessenger>(provider =>

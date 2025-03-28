@@ -10,11 +10,17 @@ namespace Project_Radon.Helpers
 {
     public static class Json
     {
+        public static object locker = new object();
         public static async Task<T> ToObjectAsync<T>(string value)
         {
+
             return await Task.Run<T>(() =>
             {
-                return JsonConvert.DeserializeObject<T>(value);
+                lock(locker)
+                {
+                    return JsonConvert.DeserializeObject<T>(value);
+                }
+                
             });
         }
 
@@ -22,7 +28,11 @@ namespace Project_Radon.Helpers
         {
             return await Task.Run<string>(() =>
             {
-                return JsonConvert.SerializeObject(value);
+                lock(locker)
+                {
+                    return JsonConvert.SerializeObject(value);
+                }
+                
             });
         }
     }

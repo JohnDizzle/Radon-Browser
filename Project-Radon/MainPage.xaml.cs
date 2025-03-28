@@ -38,6 +38,8 @@ using Project_Radon.Services;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using Project_Radon.Contracts.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Project_Radon.Models;
+using Project_Radon.ViewModels;
 
 namespace Project_Radon
 {
@@ -47,10 +49,13 @@ namespace Project_Radon
         string GoogleSignInUserAgent;
         public static string SearchValue;
         private readonly ObservableCollection<BrowserTabViewItem> CurrentTabs = new ObservableCollection<BrowserTabViewItem>();
-        
-
+        public MainPageViewModel ViewModel { get;  }
+ 
         public MainPage()
         {
+            
+            ViewModel = App.Current.Services.GetService<MainPageViewModel>();
+           
             InitializeComponent();
             
 
@@ -779,6 +784,13 @@ namespace Project_Radon
         private void verttablist_DropCompleted(UIElement sender, DropCompletedEventArgs args)
         {
             
+        }
+        private async void HistoryPanel_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is HistoryModel item)
+            {
+                await CurrentTabs[BrowserTabs.SelectedIndex].Tab.SearchOrGoto(item.TheUrl.AbsoluteUri);
+            }
         }
     }
 }

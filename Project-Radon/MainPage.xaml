@@ -1018,6 +1018,59 @@
                                                             HorizontalContentAlignment="Left"
                                                             Background="Transparent"
                                                             BorderBrush="Transparent">
+                                                            <Button.Flyout>
+                                                                <Flyout Placement="Left" ShowMode="TransientWithDismissOnPointerMoveAway">
+                                                                    <Flyout.Content>
+                                                                        <ListView
+                                                                            x:Name="HistoryBack"
+                                                                            MaxWidth="400"
+                                                                            Margin="2"
+                                                                            Background="DarkSlateBlue"
+                                                                            BorderBrush="LightYellow"
+                                                                            BorderThickness="1"
+                                                                            ItemsSource="{x:Bind ViewModel.MyHistory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                                            <ListView.Header>
+                                                                                <StackPanel Margin="1" HorizontalAlignment="Center">
+                                                                                    <TextBlock
+                                                                                        FontWeight="Bold"
+                                                                                        Foreground="WhiteSmoke"
+                                                                                        Text="Click To Navigate" />
+                                                                                </StackPanel>
+                                                                            </ListView.Header>
+                                                                            <ListView.ItemTemplate>
+                                                                                <DataTemplate>
+
+                                                                                    <StackPanel
+                                                                                        x:Name="HistoryPanel"
+                                                                                        MinWidth="100"
+                                                                                        Padding="2"
+                                                                                        BorderBrush="Ivory"
+                                                                                        BorderThickness="1"
+                                                                                        Orientation="Horizontal"
+                                                                                        Tapped="HistoryPanel_Tapped"
+                                                                                        ToolTipService.ToolTip="{Binding TheDocumentTitle, Mode=OneWay}">
+                                                                                        <Image
+                                                                                            Width="20"
+                                                                                            Height="20"
+                                                                                            Margin="2"
+                                                                                            Source="{Binding TheContents, Mode=OneWay}" />
+                                                                                        <TextBlock
+                                                                                            MinWidth="90"
+                                                                                            MaxWidth="200"
+                                                                                            TextWrapping="WrapWholeWords">
+                                                                                            <Run Text="{Binding TheDocumentTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                                                            <Run Text="-" />
+                                                                                            <Run Text="{Binding TheUrl.Host, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                                                        </TextBlock>
+                                                                                    </StackPanel>
+
+                                                                                </DataTemplate>
+                                                                            </ListView.ItemTemplate>
+                                                                        </ListView>
+                                                                    </Flyout.Content>
+                                                                </Flyout>
+                                                            </Button.Flyout>
+
                                                             <StackPanel Orientation="Horizontal">
                                                                 <FontIcon FontSize="15" Glyph="&#xF738;" />
                                                                 <TextBlock Margin="9,0,0,0" Text="History" />

@@ -15,6 +15,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Windows.UI.Xaml.Media.Imaging;
 
 
+
 namespace Project_Radon.Services
 {
     interface IWebDivSettings
@@ -27,7 +28,6 @@ namespace Project_Radon.Services
         string UserAgentWebCore { get; set; }
         ElementTheme ThemeDefault { get; set; }
         Visibility VisibilitySideToolBar { get; set; }
-        ObservableCollection<HistoryModel> HistoryModels { get; set; }
         string HomeUrlString { get; set; }
         bool TitleBarPinned { get; set; }
 
@@ -55,7 +55,7 @@ namespace Project_Radon.Services
         public Visibility VisibilitySideToolBar { get; set; }
         public bool TitleBarPinned { get; set; }
         public string HomeUrlString { get; set; }
-        public ObservableCollection<HistoryModel> HistoryModels { get; set; }
+        
 
     }
 
@@ -65,8 +65,10 @@ namespace Project_Radon.Services
         public WebDiveSettings AppSettings { get; set; }
         public event EventHandler<NotifyCollectionChangedEventArgs> FavoritesCollectionChanged;
         public event EventHandler<NotifyCollectionChangedEventArgs> HistoryCollectionChanged;
-        internal string CorePathFavorites { get; set; } = System.Security.Principal.WindowsIdentity.GetCurrent().Name! + @"\Favorites\";
-        internal string CorePathSettings { get; set; } =  System.Security.Principal.WindowsIdentity.GetCurrent().Name! + @"\Settings\";
+        internal string CorePathFavorites { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"\Favorites\";
+        internal string CorePathSettings { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"\Settings\";
+        internal string CorePathHistory { get; set; } = Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER") + @"\History\";
+
         public SettingsService()
         {
             InitializeAsync();
@@ -88,10 +90,10 @@ namespace Project_Radon.Services
                  using (var fs = File.Create(Path.Combine(path, "Settings", "settings.json"))) ;
 
             }
-
+            
             Instance = this;
             FavoritesStore.CollectionChanged += FavoritesStore_CollectionChanged;
-            historyModels.CollectionChanged += HistoryStore_CollectionChanged;
+            HistoryStore.CollectionChanged += HistoryStore_CollectionChanged;
 
         }
 
@@ -159,7 +161,7 @@ namespace Project_Radon.Services
                 {
                     var dir = Directory.CreateDirectory(path);
                     using (var fs = File.Create(fileFavs)) ;
-                    return await Json.ToObjectAsync<T>(json);
+                    return await Task.FromResult(JsonConvert.DeserializeObject<T>("[]"));
 
                 }
 
@@ -169,11 +171,37 @@ namespace Project_Radon.Services
 
                 throw;
             }
-
-
-
         }
 
+        private async void WriteFavorite<T>(T favorites)
+        {
+            try
+            {
+                var file = Path.Combine(CorePathSettings, "favorites.json");
+
+                if (File.Exists(file))
+                {
+                    var json = JsonConvert.SerializeObject(favorites);
+                    await File.WriteAllTextAsync(file, json);
+                }
+                else
+                {
+                    Directory.CreateDirectory(CorePathSettings);
+
+                    if (Directory.Exists(CorePathSettings))
+                    {
+                        using (var fs = File.Create(file)) { };
+                        var json = JsonConvert.SerializeObject(favorites);
+                        await File.WriteAllTextAsync(file, json);
+                    }
+                }
+                return;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
         async Task<T> ReadSettings<T>()
         {
             string json = "{}";
@@ -194,7 +222,7 @@ namespace Project_Radon.Services
                 {
                     var dir = Directory.CreateDirectory(path);
                     using (var fs = File.Create(fileFavs));
-                    return await Json.ToObjectAsync<T>("{}");
+                    return await Task.FromResult(JsonConvert.DeserializeObject<T>("{}"));
 
                 }
 
@@ -215,65 +243,109 @@ namespace Project_Radon.Services
 
             try
             {
+                var file = Path.Combine(CorePathSettings, "settings.json");
 
-                var Infile = await Windows.Storage.ApplicationData.Current.LocalFolder.GetFileAsync(string.Format(@"{0}settings.json", CorePathSettings));
-                if (Infile is not null)
+                if (File.Exists(file))
                 {
-                    var folder = await Windows.Storage.ApplicationData.Current.LocalFolder.GetFolderAsync(CorePathSettings);
-                    Windows.Storage.StorageFile file = await folder.CreateFileAsync("settings.json", CreationCollisionOption.OpenIfExists);
-                    await Windows.Storage.FileIO.WriteTextAsync(file, await Json.StringifyAsync(settings));
-
+                    var json = JsonConvert.SerializeObject(settings);
+                    await File.WriteAllTextAsync(file, json);
                 }
                 else
                 {
-                    var folder = await Windows.Storage.ApplicationData.Current.LocalFolder.CreateFolderAsync(CorePathSettings);
-                    if (folder != null)
+                    Directory.CreateDirectory(CorePathSettings);
+
+                    if (Directory.Exists(CorePathSettings))
                     {
-                        Windows.Storage.StorageFile file = await folder.CreateFileAsync("settings.json", CreationCollisionOption.OpenIfExists);
-                        await Windows.Storage.FileIO.WriteTextAsync(file, await Json.StringifyAsync(settings));
+                        using (var fs = File.Create(file)) { };
+                        var json = JsonConvert.SerializeObject(settings);
+                        await File.WriteAllTextAsync(file, json);
                     }
                 }
                 return;
             }
             catch (Exception)
             {
-
                 throw;
             }
 
 
         }
-        async void WriteFavorite<T>(T bookmarks)
+       
+        private ObservableCollection<HistoryModel> historyModels = new ObservableCollection<HistoryModel>();
+        public ObservableCollection<HistoryModel> HistoryStore
         {
+            get
+            {
+                var result = ReadHistory<ObservableCollection<HistoryModel>>().GetAwaiter().GetResult();
+                return result ?? new ObservableCollection<HistoryModel>();
+            }
+            set
+            {
+                var obj = new object();
+                lock (obj)
+                {
+                    historyModels.Add((value as ObservableCollection<HistoryModel>).FirstOrDefault());
+                    WriteHistory(historyModels);
+                    HistoryCollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+                }
+            }
+        }
 
+        async Task<T> ReadHistory<T>()
+        {
+            string json = "[]";
+            string path = Path.Combine(Environment.GetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER"), CorePathHistory);
+            string fileHistory = Path.Combine(path, "history.json");
 
             try
             {
-
-                var Infile = await Windows.Storage.ApplicationData.Current.LocalFolder.GetFileAsync(string.Format(@"{0}favorites.json", CorePathFavorites));
-                if (Infile is not null)
+                if (File.Exists(fileHistory))
                 {
-                    var folder = await Windows.Storage.ApplicationData.Current.LocalFolder.GetFolderAsync(CorePathFavorites);
-                    Windows.Storage.StorageFile file = await folder.CreateFileAsync("favorites.json", CreationCollisionOption.OpenIfExists);
-                    await Windows.Storage.FileIO.WriteTextAsync(file, await Json.StringifyAsync(bookmarks));
+                    json = File.ReadAllText(fileHistory);
+                    var history = JsonConvert.DeserializeObject<T>(json);
+                    return await Task.FromResult<T>(history);
                 }
                 else
                 {
-                    var folder = await Windows.Storage.ApplicationData.Current.LocalFolder.CreateFolderAsync(CorePathFavorites);
-                    if (folder != null)
-                    {
-                        Windows.Storage.StorageFile file = await folder.CreateFileAsync("favorites.json", CreationCollisionOption.OpenIfExists);
-                        await Windows.Storage.FileIO.WriteTextAsync(file, await Json.StringifyAsync(bookmarks));
-                    }
+                    var dir = Directory.CreateDirectory(path);
+                    using (var fs = File.Create(fileHistory)) ;
+                    return await Task.FromResult(JsonConvert.DeserializeObject<T>("[]"));
                 }
             }
             catch (Exception)
             {
-
                 throw;
             }
+        }
 
+        async void WriteHistory<T>(T history)
+        {
+            try
+            {
+                var file = Path.Combine(CorePathSettings, "history.json");
 
+                if (File.Exists(file))
+                {
+                    var json = JsonConvert.SerializeObject(history);
+                    await File.WriteAllTextAsync(file, json);
+                }
+                else
+                {
+                    Directory.CreateDirectory(CorePathSettings);
+
+                    if (Directory.Exists(CorePathSettings))
+                    {
+                        using (var fs = File.Create(file)) { };
+                        var json = JsonConvert.SerializeObject(history);
+                        await File.WriteAllTextAsync(file, json);
+                    }
+                }
+                return;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public string HomeUrlString
@@ -398,31 +470,15 @@ namespace Project_Radon.Services
             }
         }
 
-        private ObservableCollection<HistoryModel> historyModels = new ObservableCollection<HistoryModel>();
-        public ObservableCollection<HistoryModel> HistoryStore
-        {
-            get
-            {
-                return historyModels.Reverse().ToObservableCollection();
-            }
-            set
-            {
-                object obj = new object();
-                lock (obj)
-                {
-                    historyModels = value;
-                    HistoryCollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-                }
+       
 
-            }
-        }
 
         public ObservableCollection<Bookmarks> FavoritesStore
         {
             get
             {
-                var result = Task.Run(async () => await ReadFavorites<ObservableCollection<Bookmarks>>());// Task.Run(async () => await ReadAsync(nameof(FavoritesStore), new ObservableCollection<Bookmarks>()));
-                return result.Result ?? new ObservableCollection<Bookmarks>();
+                var result = ReadFavorites<ObservableCollection<Bookmarks>>().GetAwaiter().GetResult();
+                return result ?? new ObservableCollection<Bookmarks>();
             }
             set
             {

@@ -54,7 +54,7 @@ namespace Project_Radon.Controls
         public string WVBaseUri => IsCoreInitialized ? (WebBrowser.Source.Host.ToString()) : null;
         public string SourceUri => IsCoreInitialized ? (WebBrowser.Source.AbsoluteUri.ToLower().Contains("edge://") ? "radon://" + WebBrowser.Source.AbsoluteUri.Remove(0, 7) : WebBrowser.Source.AbsoluteUri) : "";
         public string Favicon => IsCoreInitialized && !IsLoading ? ("http://www.google.com/s2/favicons?domain=" + WebBrowser.Source.AbsoluteUri) : "https://raw.githubusercontent.com/microsoft/fluentui-system-icons/main/assets/Document/SVG/ic_fluent_document_48_regular.svg";
-        public string Title => IsCoreInitialized && !IsLoading ? (WebBrowser.CoreWebView2.DocumentTitle ?? WebBrowser.Source.AbsoluteUri) : "Loading";
+        public string Title => IsCoreInitialized && !IsLoading ? (WebBrowser.CoreWebView2?.DocumentTitle ?? WebBrowser.Source.AbsoluteUri) : "Loading";
         public bool IsCoreInitialized { get; private set; }
 
         private readonly IWebViewService viewService;
@@ -118,6 +118,10 @@ namespace Project_Radon.Controls
                 ToolTipService.SetToolTip(profileCenterToggle, toolTip);
             }
 
+            this.Unloaded += (s, e) =>
+            {
+                viewService.UnregisterEvents(); 
+            };
 
             ntpTimeDisplayService();
 
@@ -136,11 +140,6 @@ namespace Project_Radon.Controls
 
         }
 
-
-
-
-
-
         private void WebBrowser_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
         {
             ntpSearchBar.Text = string.Empty;
@@ -150,7 +149,6 @@ namespace Project_Radon.Controls
                 WebBrowser.Visibility = Visibility.Collapsed;
                 ntpGrid.Visibility = Visibility.Visible;
                 ntpbackgroundbrush.ImageSource = new BitmapImage(new Uri("https://bing.biturl.top/?resolution=1366&format=image&index=random&mkt=en-US"));
-
 
             }
             else
@@ -272,7 +270,7 @@ namespace Project_Radon.Controls
 
         public async void Task1()
         {
-
+            await Task.Delay(100);  
         }
         public void Reload()
         {

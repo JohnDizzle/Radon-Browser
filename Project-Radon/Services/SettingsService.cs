@@ -274,20 +274,7 @@ namespace Project_Radon.Services
 
                 if (File.Exists(file))
                 {
-                    var existingHistory = JsonConvert.DeserializeObject<List<HistoryModel>>(File.ReadAllText(file));
-
-                    if (existingHistory is null)
-                        return; 
-
-                    foreach (var item in (history as List<HistoryModel>).ToList())
-                    {
-                        if (!existingHistory.Any(h => h.TheUrl == item.TheUrl))
-                        {
-                            existingHistory.Add(item);
-                        }
-                    }
-
-                    var json = JsonConvert.SerializeObject(existingHistory);
+                    var json = JsonConvert.SerializeObject(history);
                     await File.WriteAllTextAsync(file, json);
                 }
                 else
@@ -390,7 +377,7 @@ namespace Project_Radon.Services
                 lock (obj)
                 {
                     historyModels.Add((value as ObservableCollection<HistoryModel>).FirstOrDefault());
-                    WriteHistory(historyModels);
+                    WriteHistory(historyModels.Distinct());
                     HistoryCollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
                 }
             }

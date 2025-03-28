@@ -391,12 +391,13 @@ namespace Project_Radon.Services
                             AddressPicture = item.TheContents;
                             AddressUrl = string.IsNullOrEmpty(_webView.CoreWebView2?.FaviconUri) ? new Uri(string.Format("https://www.google.com/s2/favicons?domain_url={0}", _webView.Source.Host.ToString())) : new Uri(_webView.CoreWebView2?.FaviconUri);
 
+                            // TODO: need to account for multiple instance on the Model 2025/3/27
                             if (HistoryStore.Any(t => t.TheUrl.ToString() == item.TheUrl.AbsoluteUri))
                             {
-                                var exits = HistoryStore.Single(x => x.TheUrl.ToString() == item.TheUrl.AbsoluteUri);
-                                if (exits is HistoryModel)
+                                var exits = HistoryStore.Where(x => x.TheUrl.ToString() == item.TheUrl.AbsoluteUri).ToList();
+                                if (exits is not null)
                                 {
-                                    var index = HistoryStore.IndexOf(exits);
+                                    var index = exits.Count - 1;
                                     if (index >= 0)
                                     {
 

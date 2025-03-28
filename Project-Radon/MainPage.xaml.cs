@@ -40,6 +40,7 @@ using Project_Radon.Contracts.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Project_Radon.Models;
 using Project_Radon.ViewModels;
+using Windows.UI.Xaml.Controls.Primitives;
 
 namespace Project_Radon
 {
@@ -795,6 +796,10 @@ namespace Project_Radon
             {
                 await CurrentTabs[BrowserTabs.SelectedIndex].Tab.SearchOrGoto(item.TheUrl.AbsoluteUri);
             }
+
+            RadonOverflowMenu.Hide();
+            e.Handled = true; 
+
         }
     }
 }
